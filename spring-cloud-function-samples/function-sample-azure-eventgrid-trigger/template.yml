@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Azure Event Grid with CloudEvents Spring Cloud Function Sample
+
+# Note: This is an example ARM template structure
+# For actual Azure deployment, convert to Azure Resource Manager template format
+
+Parameters:
+  FunctionAppName:
+    Type: String
+    Default: azure-eventgrid-demo
+    Description: Name of the Azure Function App
+  
+  StorageAccountName:
+    Type: String
+    Default: azureeventgridstorage
+    Description: Name of the Azure Storage Account
+  
+  EventGridTopicName:
+    Type: String
+    Default: azure-eventgrid-topic
+    Description: Name of the Azure Event Grid Topic
+
+Resources:
+  # Azure Function App Configuration
+  EventGridFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: com.example.azure.eventgrid.EventGridHandler::eventGridWebhook
+      Runtime: java17
+      MemorySize: 512
+      Timeout: 30
+      Environment:
+        Variables:
+          SPRING_PROFILES_ACTIVE: azure
+      Events:
+        EventGridApi:
+          Type: Api
+          Properties:
+            Path: /api/eventgrid
+            Method: ANY
+
+Outputs:
+  EventGridFunctionApi:
+    Description: "API Gateway endpoint URL for Event Grid function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/api/eventgrid"
+  
+  EventGridFunction:
+    Description: "Event Grid Function ARN"
+    Value: !GetAtt EventGridFunction.Arn
