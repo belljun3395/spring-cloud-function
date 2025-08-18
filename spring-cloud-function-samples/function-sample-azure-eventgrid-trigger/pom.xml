@@ -28,8 +28,7 @@
 		<functionAppName>spring-cloud-function-eventgrid-demo</functionAppName>
 		<functionAppRegion>westus</functionAppRegion>
 		<functionResourceGroup>java-functions-group</functionResourceGroup>
-		<functionAppServicePlanName>java-functions-app-service-plan</functionAppServicePlanName>
-		<functionPricingTier>EP1</functionPricingTier>
+		<functionPricingTier>Y1</functionPricingTier>
 	</properties>
 	<dependencies>
 
@@ -83,7 +82,6 @@
 					<appName>${functionAppName}</appName>
 					<resourceGroup>${functionResourceGroup}</resourceGroup>
 					<region>${functionAppRegion}</region>
-					<appServicePlanName>${functionAppServicePlanName}</appServicePlanName>
 					<pricingTier>${functionPricingTier}</pricingTier>
 
 					<hostJson>${project.basedir}/src/main/resources/host.json</hostJson>

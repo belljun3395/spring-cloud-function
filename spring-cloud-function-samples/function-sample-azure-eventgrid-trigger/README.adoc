@@ -51,30 +51,30 @@ Create required Azure resources:
 [source,shell]
 ----
 # Create resource group
-az group create --name my-eventgrid-rg --location eastus
+az group create --name java-functions-group --location westus
 
 # Create storage account (required for Azure Functions)
 az storage account create \
-  --name mystorageaccount123 \
-  --resource-group my-eventgrid-rg \
-  --location eastus \
+  --name azureeventgridstorage \
+  --resource-group java-functions-group \
+  --location westus \
   --sku Standard_LRS
 
 # Create Azure Function App
 az functionapp create \
-  --name my-eventgrid-function \
-  --consumption-plan-location eastus \
+  --name spring-cloud-function-eventgrid-demo \
+  --consumption-plan-location westus \
   --functions-version 4 \
-  --resource-group my-eventgrid-rg \
+  --resource-group java-functions-group \
   --runtime java \
   --runtime-version 17 \
-  --storage-account mystorageaccount123
+  --storage-account azureeventgridstorage
 
 # Create Event Grid custom topic
 az eventgrid topic create \
-  --name my-eventgrid-topic \
-  --resource-group my-eventgrid-rg \
-  --location eastus \
+  --name azure-eventgrid-topic \
+  --resource-group java-functions-group \
+  --location westus \
   --input-schema cloudeventschemav1_0
 ----
 
@@ -87,7 +87,7 @@ Update `src/main/resources/local.settings.json` with your Azure Storage connecti
 {
   "IsEncrypted": false,
   "Values": {
-    "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=mystorageaccount123;AccountKey=<YOUR_KEY>;EndpointSuffix=core.windows.net",
+    "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=azureeventgridstorage;AccountKey=<YOUR_STORAGE_ACCOUNT_KEY>;EndpointSuffix=core.windows.net",
     "FUNCTIONS_WORKER_RUNTIME": "java"
   }
 }
@@ -185,15 +185,15 @@ After deployment, create an Event Grid subscription to route events to your func
 ----
 # Get function URL
 FUNCTION_URL=$(az functionapp function show \
-  --name my-eventgrid-function \
-  --resource-group my-eventgrid-rg \
+  --name spring-cloud-function-eventgrid-demo \
+  --resource-group java-functions-group \
   --function-name eventGridWebhook \
   --query "invokeUrlTemplate" -o tsv)
 
 # Create Event Grid subscription
 az eventgrid event-subscription create \
   --name my-function-subscription \
-  --source-resource-id /subscriptions/{subscription-id}/resourceGroups/my-eventgrid-rg/providers/Microsoft.EventGrid/topics/my-eventgrid-topic \
+  --source-resource-id /subscriptions/{subscription-id}/resourceGroups/java-functions-group/providers/Microsoft.EventGrid/topics/azure-eventgrid-topic \
   --endpoint "${FUNCTION_URL}" \
   --event-delivery-schema cloudeventschemav1_0
 ----
@@ -204,13 +204,13 @@ az eventgrid event-subscription create \
 ----
 # Get Event Grid topic endpoint and key
 TOPIC_ENDPOINT=$(az eventgrid topic show \
-  --name my-eventgrid-topic \
-  --resource-group my-eventgrid-rg \
+  --name azure-eventgrid-topic \
+  --resource-group java-functions-group \
   --query "endpoint" -o tsv)
 
 TOPIC_KEY=$(az eventgrid topic key list \
-  --name my-eventgrid-topic \
-  --resource-group my-eventgrid-rg \
+  --name azure-eventgrid-topic \
+  --resource-group java-functions-group \
   --query "key1" -o tsv)
 
 # Send CloudEvent to Event Grid
@@ -301,10 +301,10 @@ Configure dead letter destinations for failed event processing:
 ----
 az eventgrid event-subscription create \
   --name my-function-subscription \
-  --source-resource-id /subscriptions/{subscription-id}/resourceGroups/my-eventgrid-rg/providers/Microsoft.EventGrid/topics/my-eventgrid-topic \
+  --source-resource-id /subscriptions/{subscription-id}/resourceGroups/java-functions-group/providers/Microsoft.EventGrid/topics/azure-eventgrid-topic \
   --endpoint "${FUNCTION_URL}" \
   --event-delivery-schema cloudeventschemav1_0 \
-  --deadletter-endpoint /subscriptions/{subscription-id}/resourceGroups/my-eventgrid-rg/providers/Microsoft.Storage/storageAccounts/mystorageaccount123/blobServices/default/containers/deadletter
+  --deadletter-endpoint /subscriptions/{subscription-id}/resourceGroups/java-functions-group/providers/Microsoft.Storage/storageAccounts/azureeventgridstorage/blobServices/default/containers/deadletter
 ----
 
 === Resources

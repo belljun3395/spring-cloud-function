@@ -101,17 +101,18 @@ public class EventGridHandler {
 		logger.info("Handling webhook validation request");
 
         String origin = getHeaderIgnoreCase(request.getHeaders(), WEBHOOK_REQUEST_ORIGIN);
-		if (origin != null) {
-			logger.info("Webhook validation origin: {}", origin);
-			return request.createResponseBuilder(HttpStatus.OK)
-				.header(WEBHOOK_ALLOWED_ORIGIN, origin)
-				.build();
-		}
+        if (origin == null) {
+            logger.warn("Webhook validation: missing WebHook-Request-Origin header, responding with wildcard");
+            // Be permissive to pass Azure CLI/portal validation flows that omit the header
+            return request.createResponseBuilder(HttpStatus.OK)
+                .header(WEBHOOK_ALLOWED_ORIGIN, "*")
+                .build();
+        }
 
-		logger.warn("Webhook validation failed: missing WebHook-Request-Origin header");
-		return request.createResponseBuilder(HttpStatus.BAD_REQUEST)
-			.body("Missing WebHook-Request-Origin header")
-			.build();
+        logger.info("Webhook validation origin: {}", origin);
+        return request.createResponseBuilder(HttpStatus.OK)
+            .header(WEBHOOK_ALLOWED_ORIGIN, origin)
+            .build();
 	}
 
 	/**
